@@ -8,7 +8,7 @@
     <table>
         <thead>
             <tr>
-                <th>#</th><th>Nama</th><th>NIM</th><th>Jurusan</th><th>Divisi</th><th>Jabatan</th><th>Aksi</th>
+                <th>#</th><th>Nama</th><th>NIM</th><th>Jurusan</th><th>Divisi</th><th>Jabatan</th><th>Email / Gmail</th><th>Angkatan</th><th>Aksi</th>
             </tr>
         </thead>
         <tbody>
@@ -20,6 +20,8 @@
                 <td>{{ $a->jurusan ?? '-' }}</td>
                 <td>{{ $a->divisi->nama_divisi ?? '-' }}</td>
                 <td>{{ $a->jabatan->nama_jabatan ?? '-' }}</td>
+                <td>{{ $a->email ?? '-' }}</td>
+                <td>{{ $a->angkatan ?? '-' }}</td>
                 <td>
                     <div style="display:flex;gap:6px">
                         <a href="{{ route('anggota.edit', $a) }}" class="btn btn-sm btn-edit"><i class="fa-solid fa-pen"></i></a>

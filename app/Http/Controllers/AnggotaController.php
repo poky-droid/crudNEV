@@ -25,6 +25,8 @@ class AnggotaController extends Controller
             'anggota'  => null,
             'divisis'  => Divisi::all(),
             'jabatans' => Jabatan::all(),
+            'angkatan' => '',
+            'email' => '',
         ]);
     }
 
@@ -33,10 +35,12 @@ class AnggotaController extends Controller
         $request->validate([
             'nama'     => 'required|string|max:150',
             'nim'      => 'required|string|max:50|unique:anggota,nim',
+            'email'    => 'required|email|unique:anggota,email',
+            'angkatan' => 'integer|min:1900|max:' . (date('Y') + 1),
             'password' => 'required|string|min:6',
         ]);
 
-        $data = $request->only(['nama','nim','jurusan','divisi_id','jabatan_id']);
+        $data = $request->only(['nama','nim','jurusan','email','angkatan','divisi_id','jabatan_id']);
         $data['password'] = Hash::make($request->password);
 
         if ($request->hasFile('foto')) {
@@ -54,19 +58,21 @@ class AnggotaController extends Controller
             'anggota'  => $anggota,
             'divisis'  => Divisi::all(),
             'jabatans' => Jabatan::all(),
+            'angkatan' => $anggota->angkatan ?? '',
+            'email' => $anggota->email ?? '',
         ]);
     }
 
     public function update(Request $request, Anggota $anggota)
     {
         $request->validate([
-            'nama' => 'required|string|max:150',
-            'nim'  => 'required|string|max:50|unique:anggota,nim,'.$anggota->id,
-            'gmail' => 'required|email|unique:anggota,gmail,'.$anggota->id,
-            'angkatan' => 'required|integer|min:1900|max:' . (date('Y') + 1),
+            'nama'     => 'required|string|max:150',
+            'nim'      => 'required|string|max:50|unique:anggota,nim,'.$anggota->id,
+            'email'    => 'required|email|unique:anggota,email,'.$anggota->id,
+            'angkatan' => 'integer|min:1900|max:' . (date('Y') + 1),
         ]);
 
-        $data = $request->only(['nama','nim','jurusan','divisi_id','jabatan_id','gmail','angkatan']);
+        $data = $request->only(['nama','nim','jurusan','email','angkatan','divisi_id','jabatan_id']);
 
         if ($request->filled('password')) {
             $request->validate(['password' => 'min:6']);

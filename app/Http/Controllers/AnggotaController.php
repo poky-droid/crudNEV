@@ -62,9 +62,11 @@ class AnggotaController extends Controller
         $request->validate([
             'nama' => 'required|string|max:150',
             'nim'  => 'required|string|max:50|unique:anggota,nim,'.$anggota->id,
+            'gmail' => 'required|email|unique:anggota,gmail,'.$anggota->id,
+            'angkatan' => 'required|integer|min:1900|max:' . (date('Y') + 1),
         ]);
 
-        $data = $request->only(['nama','nim','jurusan','divisi_id','jabatan_id']);
+        $data = $request->only(['nama','nim','jurusan','divisi_id','jabatan_id','gmail','angkatan']);
 
         if ($request->filled('password')) {
             $request->validate(['password' => 'min:6']);

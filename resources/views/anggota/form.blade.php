@@ -23,6 +23,14 @@
             <label>Jurusan</label>
             <input type="text" name="jurusan" value="{{ old('jurusan', $anggota->jurusan ?? '') }}">
         </div>
+        <div class="form-group">
+            <label>Email / Gmail</label>
+            <input type="email" name="email" value="{{ old('email', $anggota->email ?? '') }}" required>
+        </div>
+        <div class="form-group">
+            <label>Angkatan</label>
+            <input type="number" name="angkatan" value="{{ old('angkatan', $anggota->angkatan ?? '') }}" min="1900" max="{{ date('Y') + 1 }}">
+        </div>
 
         <div class="form-grid-2">
             <div class="form-group">

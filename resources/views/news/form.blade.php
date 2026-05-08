@@ -50,6 +50,7 @@
             <label>Judul</label>
             <input type="text" name="judul" value="{{ old('judul', $news->judul ?? '') }}" required>
         </div>
+        
         <div class="form-group">
             <label>Deskripsi Singkat</label>
             <textarea name="deskripsi" rows="3">{{ old('deskripsi', $news->deskripsi ?? '') }}</textarea>

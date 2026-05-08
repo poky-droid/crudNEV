@@ -47,6 +47,10 @@
             <input type="text" name="nama_modul" value="{{ old('nama_modul', $modul->nama_modul ?? '') }}" required>
         </div>
         <div class="form-group">
+            <label>Slug</label>
+            <input type="text" name="slug" value="{{ old('slug', $modul->slug ?? '') }}" required>
+        </div>
+        <div class="form-group">
             <label>Deskripsi</label>
             <textarea name="deskripsi" rows="3">{{ old('deskripsi', $modul->deskripsi ?? '') }}</textarea>
         </div>

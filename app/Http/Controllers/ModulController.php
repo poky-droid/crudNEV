@@ -6,6 +6,7 @@ use App\Models\Modul;
 use App\Models\ModulKonten;
 use App\Models\Anggota;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ModulController extends Controller
 {
@@ -25,8 +26,9 @@ class ModulController extends Controller
     public function store(Request $request)
     {
         $request->validate(['nama_modul' => 'required|string|max:255']);
+        $request->validate(['slug' => 'nullable|string|max:255|unique:modul,slug']);
 
-        $modul = Modul::create($request->only(['nama_modul','deskripsi','anggota_id']));
+        $modul = Modul::create($request->only(['nama_modul', 'slug', 'deskripsi', 'anggota_id']));
         $modul->anggotaAkses()->sync($request->anggota_akses ?? []);
         $this->syncKonten($modul, $request->konten ?? []);
 
@@ -45,8 +47,18 @@ class ModulController extends Controller
     public function update(Request $request, Modul $modul)
     {
         $request->validate(['nama_modul' => 'required|string|max:255']);
+        $request->validate(['slug' => 'nullable|string|max:255|unique:modul,slug,' . $modul->id]);
 
-        $modul->update($request->only(['nama_modul','deskripsi','anggota_id']));
+        $updateData = $request->only(['nama_modul','deskripsi','anggota_id']);
+        
+        // Update slug jika diberikan, atau generate dari nama_modul
+        if (!empty($request->slug)) {
+            $updateData['slug'] = $request->slug;
+        } else {
+            $updateData['slug'] = Str::slug($request->nama_modul);
+        }
+        
+        $modul->update($updateData);
         $modul->anggotaAkses()->sync($request->anggota_akses ?? []);
         $this->syncKonten($modul, $request->konten ?? []);
 
@@ -62,6 +74,7 @@ class ModulController extends Controller
     private function syncKonten(Modul $modul, array $kontens)
     {
         $existingIds = [];
+        $urutan = 1;
 
         foreach ($kontens as $k) {
             if (!empty($k['id'])) {
@@ -70,7 +83,7 @@ class ModulController extends Controller
                     $konten->update([
                         'tipe'     => $k['tipe'],
                         'isi_text' => $k['tipe'] === 'text' ? ($k['isi_text'] ?? null) : null,
-                        'urutan'   => $k['urutan'] ?? 1,
+                        'urutan'   => $urutan,
                     ]);
                     $existingIds[] = $konten->id;
                 }
@@ -79,10 +92,11 @@ class ModulController extends Controller
                     'modul_id' => $modul->id,
                     'tipe'     => $k['tipe'],
                     'isi_text' => $k['tipe'] === 'text' ? ($k['isi_text'] ?? null) : null,
-                    'urutan'   => $k['urutan'] ?? 1,
+                    'urutan'   => $urutan,
                 ]);
                 $existingIds[] = $newKonten->id;
             }
+            $urutan++;
         }
 
         ModulKonten::where('modul_id', $modul->id)

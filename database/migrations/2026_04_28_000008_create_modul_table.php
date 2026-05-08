@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('modul', function (Blueprint $table) {
             $table->id();
+            $table->string('slug')->unique();
             $table->string('nama_modul');
             $table->text('deskripsi')->nullable();
             $table->foreignId('anggota_id')->constrained('anggota')->onDelete('cascade');

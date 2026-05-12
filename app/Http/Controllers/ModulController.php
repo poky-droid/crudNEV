@@ -7,7 +7,7 @@ use App\Models\ModulKonten;
 use App\Models\Anggota;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage; // wajib
+use Illuminate\Support\Facades\Storage;
 
 class ModulController extends Controller
 {

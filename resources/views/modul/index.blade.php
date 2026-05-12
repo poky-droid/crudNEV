@@ -7,16 +7,23 @@
     </div>
     <table>
         <thead>
-            <tr><th>#</th><th>Nama Modul</th><th>Pembuat</th><th>Slug</th><th>Akses Anggota</th><th>Konten</th><th>Tgl Dibuat</th><th>Aksi</th></tr>
+            <tr><th>#</th><th>Nama Modul</th><th>Pembuat</th><th>Slug</th><th>Konten</th><th>Tgl Dibuat</th><th>Aksi</th></tr>
         </thead>
         <tbody>
             @forelse($moduls as $i => $m)
             <tr>
                 <td style="color:var(--text-muted);width:40px">{{ $i+1 }}</td>
                 <td>{{ $m->nama_modul }}</td>
-                <td>{{ $m->anggota->nama ?? '-' }}</td>
+                <td>
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        @foreach($m->creators as $creator)
+                            <span style="font-size:12px;background:rgba(124,106,247,.1);color:var(--accent);padding:4px 8px;border-radius:4px;width:fit-content">
+                                {{ $creator->nama }}
+                            </span>
+                        @endforeach
+                    </div>
+                </td>
                 <td><code style="font-size:12px;color:var(--text-muted)">{{ $m->slug }}</code></td>
-                <td><span class="badge badge-muted">{{ $m->anggotaAkses->count() }} anggota</span></td>
                 <td><span class="badge badge-muted">{{ $m->konten->count() }} blok</span></td>
                 <td style="color:var(--text-muted);font-size:12px">{{ $m->created_at->format('d M Y') }}</td>
                 <td>

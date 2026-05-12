@@ -55,26 +55,19 @@
             <textarea name="deskripsi" rows="3">{{ old('deskripsi', $modul->deskripsi ?? '') }}</textarea>
         </div>
         <div class="form-group">
-            <label>Pembuat</label>
-            <select name="anggota_id">
-                <option value="">— Pilih Pembuat —</option>
-                @foreach($anggotas as $a)
-                    <option value="{{ $a->id }}" {{ old('anggota_id', $modul->anggota_id ?? '') == $a->id ? 'selected' : '' }}>{{ $a->nama }}</option>
-                @endforeach
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Akses Anggota</label>
+            <label>Pembuat <span style="color:red">*</span></label>
             <div class="anggota-check-list" style="margin-top:10px">
                 @foreach($anggotas as $a)
                 <label class="anggota-check-item">
-                    <input type="checkbox" name="anggota_akses[]" value="{{ $a->id }}"
-                        {{ isset($modul) && $modul->anggotaAkses->contains($a->id) ? 'checked' : '' }}>
+                    <input type="checkbox" name="creators[]" value="{{ $a->id }}"
+                        {{ isset($modul) && $modul->creators->contains($a->id) ? 'checked' : '' }}>
                     {{ $a->nama }}
                 </label>
                 @endforeach
             </div>
+            @error('creators')
+                <span style="color: var(--danger); font-size: 12px; margin-top: 4px; display: block;">{{ $message }}</span>
+            @enderror
         </div>
 
         <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:8px;margin-bottom:16px">
@@ -96,7 +89,13 @@
                         <input type="hidden" name="konten[{{ $idx }}][id]" value="{{ $k->id }}">
                         <input type="hidden" name="konten[{{ $idx }}][urutan]" value="{{ $k->urutan }}">
                         <div class="field-text" style="{{ $k->tipe!='text'?'display:none':'' }}">
-                            <textarea name="konten[{{ $idx }}][isi_text]" rows="4" style="margin-top:8px">{{ $k->isi_text }}</textarea>
+                            <div class="quill-editor" id="editor-{{ $idx }}" style="margin-top:8px;height:180px">
+                                {!! $k->isi_text !!}
+                            </div>
+
+                            <input type="hidden"
+                                name="konten[{{ $idx }}][isi_text]"
+                                id="input-editor-{{ $idx }}">
                         </div>
                         <div class="field-file" style="{{ $k->tipe=='text'?'display:none':'' }}">
                             <input type="file" name="konten[{{ $idx }}][isi_file]" style="margin-top:8px">
@@ -117,30 +116,100 @@
 
 <script>
 let blockIdx = {{ isset($modul) ? $modul->konten->count() : 0 }};
+
 function addBlock() {
-    const list = document.getElementById('konten-list');
     const div = document.createElement('div');
     div.className = 'konten-block';
     div.innerHTML = `
-        <button type="button" class="remove-btn" onclick="removeBlock(this)"><i class="fa-solid fa-xmark"></i></button>
-        <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)">Tipe</label>
+        <button type="button" class="remove-btn" onclick="removeBlock(this)">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <label style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)">
+            Tipe
+        </label>
+
         <select name="konten[${blockIdx}][tipe]" onchange="toggleField(this)">
             <option value="text">Teks</option>
             <option value="image">Gambar</option>
             <option value="file">File</option>
         </select>
+
         <input type="hidden" name="konten[${blockIdx}][urutan]" value="${blockIdx+1}">
-        <div class="field-text"><textarea name="konten[${blockIdx}][isi_text]" rows="4" style="margin-top:8px"></textarea></div>
-        <div class="field-file" style="display:none"><input type="file" name="konten[${blockIdx}][isi_file]" style="margin-top:8px"></div>`;
-    list.appendChild(div);
+
+        <div class="field-text">
+            <div class="quill-editor"
+                 id="editor-${blockIdx}"
+                 style="margin-top:8px;height:180px"></div>
+
+            <input type="hidden"
+                   name="konten[${blockIdx}][isi_text]"
+                   id="input-editor-${blockIdx}">
+        </div>
+
+        <div class="field-file" style="display:none">
+            <input type="file"
+                   name="konten[${blockIdx}][isi_file]"
+                   style="margin-top:8px">
+        </div>
+    `;
+    document.getElementById('konten-list').appendChild(div);
+    initQuill(blockIdx);
     blockIdx++;
 }
+
 function removeBlock(btn) { btn.closest('.konten-block').remove(); }
+
 function toggleField(select) {
     const block = select.closest('.konten-block');
     const isText = select.value === 'text';
     block.querySelector('.field-text').style.display = isText ? '' : 'none';
     block.querySelector('.field-file').style.display = isText ? 'none' : '';
 }
+</script>
+
+<script>
+const quillEditors = {};
+
+function initQuill(id) {
+    // Check if editor element exists
+    const editorElement = document.getElementById(`editor-${id}`);
+    if (!editorElement) return;
+    
+    const quill = new Quill(`#editor-${id}`, {
+        theme: 'snow',
+        placeholder: 'Tulis konten...',
+        modules: {
+            toolbar: [
+                [{ header: [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline'],
+                ['blockquote', 'code-block'],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                ['link', 'image'],
+                ['clean']
+            ]
+        }
+    });
+
+    const hiddenInput = document.getElementById(`input-editor-${id}`);
+    if (!hiddenInput) return;
+
+    hiddenInput.value = quill.root.innerHTML;
+
+    quill.on('text-change', function () {
+        hiddenInput.value = quill.root.innerHTML;
+    });
+
+    quillEditors[id] = quill;
+}
+
+// Initialize Quill editors on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const editors = document.querySelectorAll('.quill-editor');
+    editors.forEach((editor) => {
+        const id = editor.id.replace('editor-', '');
+        initQuill(id);
+    });
+});
 </script>
 @endsection

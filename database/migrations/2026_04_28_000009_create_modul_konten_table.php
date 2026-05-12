@@ -12,14 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('modul_konten', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('modul_id')->constrained('modul')->onDelete('cascade');
-            $table->string('tipe'); // 'text' or 'file'
-            $table->text('isi_text')->nullable();
-            $table->string('isi_file')->nullable();
-            $table->integer('urutan')->default(0);
-            $table->timestamp('created_at')->nullable();
-        });
+    $table->id();
+
+    $table->foreignId('modul_id')
+        ->constrained('modul')
+        ->onDelete('cascade');
+
+    $table->enum('tipe', ['text', 'image', 'file']);
+    $table->longText('isi_text')->nullable();
+    $table->string('isi_file')->nullable();
+    $table->integer('urutan')->default(0);
+    $table->timestamps();
+});
     }
 
     /**

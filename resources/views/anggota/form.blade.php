@@ -27,10 +27,7 @@
             <label>Email / Gmail</label>
             <input type="email" name="email" value="{{ old('email', $anggota->email ?? '') }}" required>
         </div>
-        <div class="form-group">
-            <label>Angkatan</label>
-            <input type="number" name="angkatan" value="{{ old('angkatan', $anggota->angkatan ?? '') }}" min="1900" max="{{ date('Y') + 1 }}">
-        </div>
+        
 
         <div class="form-grid-2">
             <div class="form-group">
@@ -57,7 +54,15 @@
             <label>Foto</label>
             <input type="file" name="foto" accept="image/*">
             @if(isset($anggota) && $anggota->foto)
-                <p style="font-size:12px;color:var(--text-muted);margin-top:6px">File saat ini: {{ $anggota->foto }}</p>
+                <img
+                    src="{{ Storage::disk('s3')->url($anggota->foto) }}"
+                    alt="{{ $anggota->nama }}"
+                    style="width:150px;height:150px;object-fit:cover;"
+                >
+
+                <p style="font-size:12px;color:var(--text-muted);margin-top:6px">
+                    File saat ini: {{ $anggota->foto }}
+                </p>
             @endif
         </div>
 

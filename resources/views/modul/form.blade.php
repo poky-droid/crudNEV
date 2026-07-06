@@ -49,6 +49,12 @@
     }
     .anggota-check-item input { accent-color: var(--accent); }
 
+    /* checklist khusus kategori (warna hijau biar beda dari pembuat) */
+    .kategori-check-item:has(input:checked) {
+        border-color: #4ade80; background: rgba(74,222,128,.08);
+    }
+    .kategori-check-item input { accent-color: #4ade80; }
+
     /* Quill dark-mode friendly adjustments */
     .quill-editor {
         background: var(--surface);
@@ -124,6 +130,13 @@
         font-size: 11px;
         background: rgba(124,106,247,.1);
         color: var(--accent);
+        padding: 3px 8px;
+        border-radius: 4px;
+    }
+    .preview-kategori-chip {
+        font-size: 11px;
+        background: rgba(74,222,128,.1);
+        color: #4ade80;
         padding: 3px 8px;
         border-radius: 4px;
     }
@@ -216,6 +229,22 @@
                         @endforeach
                     </div>
                     @error('creators')
+                        <span style="color: var(--danger); font-size: 12px; margin-top: 4px; display: block;">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <label>Kategori <span style="color:red">*</span></label>
+                    <div class="anggota-check-list" id="input-kategoris" style="margin-top:10px">
+                        @foreach($kategoris as $kat)
+                        <label class="anggota-check-item kategori-check-item">
+                            <input type="checkbox" name="kategoris[]" value="{{ $kat->id }}" data-nama="{{ $kat->nama_kategori }}"
+                                {{ isset($modul) && $modul->kategoris->contains($kat->id) ? 'checked' : '' }}>
+                            {{ $kat->nama_kategori }}
+                        </label>
+                        @endforeach
+                    </div>
+                    @error('kategoris')
                         <span style="color: var(--danger); font-size: 12px; margin-top: 4px; display: block;">{{ $message }}</span>
                     @enderror
                 </div>
@@ -410,6 +439,10 @@ async function updatePreview() {
         document.querySelectorAll('#input-creators input[type="checkbox"]:checked')
     ).map(cb => cb.dataset.nama);
 
+    const kategoriNames = Array.from(
+        document.querySelectorAll('#input-kategoris input[type="checkbox"]:checked')
+    ).map(cb => cb.dataset.nama);
+
     // kumpulin data blok konten secara berurutan
     const blocks = Array.from(document.querySelectorAll('#konten-list .konten-block'));
     const blockDataPromises = blocks.map(block => {
@@ -445,7 +478,7 @@ async function updatePreview() {
 
     const container = document.getElementById('preview-content');
 
-    if (!namaModul && !slug && !deskripsi && creatorNames.length === 0 && blockData.length === 0) {
+    if (!namaModul && !slug && !deskripsi && creatorNames.length === 0 && kategoriNames.length === 0 && blockData.length === 0) {
         container.innerHTML = `<div class="preview-empty"><i class="fa-solid fa-file-lines" style="font-size:24px;display:block;margin-bottom:8px"></i>Isi form di kiri untuk lihat preview</div>`;
         return;
     }
@@ -455,6 +488,16 @@ async function updatePreview() {
 
     if (slug) {
         html += `<div class="preview-slug"><i class="fa-solid fa-link"></i> /${escapeHtml(slug)}</div>`;
+    }
+
+    if (kategoriNames.length) {
+        html += `<div class="preview-creators">`;
+        kategoriNames.forEach(nama => {
+            html += `<span class="preview-kategori-chip">${escapeHtml(nama)}</span>`;
+        });
+        html += `</div>`;
+    } else {
+        html += `<div class="preview-meta" style="margin-bottom:14px"><i class="fa-solid fa-tags"></i> Kategori belum dipilih</div>`;
     }
 
     if (creatorNames.length) {

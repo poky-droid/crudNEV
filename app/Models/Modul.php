@@ -31,6 +31,11 @@ class Modul extends Model
         });
     }
 
+    public function kategoris()
+{
+    return $this->belongsToMany(Kategori::class, 'modul_kategori');
+}
+
     public function creators()  { return $this->belongsToMany(Anggota::class, 'modul_creators', 'modul_id', 'anggota_id')->withTimestamps(); }
     public function konten()    { return $this->hasMany(ModulKonten::class, 'modul_id')->orderBy('urutan'); }
 }

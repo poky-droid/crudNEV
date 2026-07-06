@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Modul;
 use App\Models\ModulKonten;
 use App\Models\Anggota;
+use App\Models\Kategori;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -15,29 +16,33 @@ class ModulController extends Controller
     {
         return view('modul.index', [
             'title'  => 'Modul',
-            'moduls' => Modul::with(['creators', 'konten'])->latest()->get(),
+            'moduls' => Modul::with(['creators', 'konten', 'kategoris'])->latest()->get(),
         ]);
     }
 
     public function create()
     {
         return view('modul.form', [
-            'title'    => 'Tambah Modul',
-            'anggotas' => Anggota::all(),
+            'title'      => 'Tambah Modul',
+            'anggotas'   => Anggota::all(),
+            'kategoris'  => Kategori::all(),
         ]);
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'nama_modul' => 'required|string|max:255',
-            'slug'       => 'nullable|string|max:255|unique:modul,slug',
-            'creators'   => 'required|array|min:1',
-            'creators.*' => 'required|exists:anggota,id',
+            'nama_modul'   => 'required|string|max:255',
+            'slug'         => 'nullable|string|max:255|unique:modul,slug',
+            'creators'     => 'required|array|min:1',
+            'creators.*'   => 'required|exists:anggota,id',
+            'kategoris'    => 'required|array|min:1',
+            'kategoris.*'  => 'required|exists:kategori,id',
         ]);
 
         $modul = Modul::create($request->only(['nama_modul', 'slug', 'deskripsi']));
         $modul->creators()->sync($request->creators);
+        $modul->kategoris()->sync($request->kategoris);
         $this->syncKonten($modul, $request);
 
         return redirect()->route('modul.index')->with('success', 'Modul berhasil ditambahkan.');
@@ -46,19 +51,22 @@ class ModulController extends Controller
     public function edit(Modul $modul)
     {
         return view('modul.form', [
-            'title'    => 'Edit Modul',
-            'modul'    => $modul->load(['creators', 'konten']),
-            'anggotas' => Anggota::all(),
+            'title'      => 'Edit Modul',
+            'modul'      => $modul->load(['creators', 'konten', 'kategoris']),
+            'anggotas'   => Anggota::all(),
+            'kategoris'  => Kategori::all(),
         ]);
     }
 
     public function update(Request $request, Modul $modul)
     {
         $request->validate([
-            'nama_modul' => 'required|string|max:255',
-            'slug'       => 'nullable|string|max:255|unique:modul,slug,' . $modul->id,
-            'creators'   => 'required|array|min:1',
-            'creators.*' => 'required|exists:anggota,id',
+            'nama_modul'   => 'required|string|max:255',
+            'slug'         => 'nullable|string|max:255|unique:modul,slug,' . $modul->id,
+            'creators'     => 'required|array|min:1',
+            'creators.*'   => 'required|exists:anggota,id',
+            'kategoris'    => 'required|array|min:1',
+            'kategoris.*'  => 'required|exists:kategori,id',
         ]);
 
         $updateData         = $request->only(['nama_modul', 'deskripsi']);
@@ -68,6 +76,7 @@ class ModulController extends Controller
 
         $modul->update($updateData);
         $modul->creators()->sync($request->creators);
+        $modul->kategoris()->sync($request->kategoris);
         $this->syncKonten($modul, $request);
 
         return redirect()->route('modul.index')->with('success', 'Modul berhasil diperbarui.');

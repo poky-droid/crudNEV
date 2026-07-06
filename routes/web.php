@@ -9,13 +9,13 @@ use App\Http\Controllers\AnggotaController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ModulController;
 use App\Http\Controllers\SponsorController;
-
+use App\Http\Controllers\KategoriController;
 // Auth routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // routes/web.php
-
+Route::resource('kategori', KategoriController::class);
 Route::post('/upload-image', [ModulController::class, 'uploadImage'])->name('upload.image');
 // Protected routes
 Route::middleware('auth.anggota')->group(function () {

@@ -361,6 +361,9 @@
         <a href="{{ route('anggota.index') }}" class="nav-item {{ request()->routeIs('anggota.*') ? 'active' : '' }}">
             <i class="fa-solid fa-users"></i> Anggota
         </a>
+        <a href="{{ route('kategori.index') }}" class="nav-item {{ request()->routeIs('kategori.*') ? 'active' : '' }}">
+            <i class="fa-solid fa-tags"></i> Kategori
+        </a>
 
         <div class="nav-group-label">Konten</div>
         <a href="{{ route('news.index') }}" class="nav-item {{ request()->routeIs('news.*') ? 'active' : '' }}">

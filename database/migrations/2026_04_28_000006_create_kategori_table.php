@@ -11,21 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('modul', function (Blueprint $table) {
+        Schema::create('kategori', function (Blueprint $table) {
             $table->id();
+            $table->string('nama_kategori');
             $table->string('slug')->unique();
-            $table->string('nama_modul');
             $table->text('deskripsi')->nullable();
-
-            $table->foreignId('anggota_id')
-                ->constrained('anggota')
-                ->cascadeOnDelete();
-
-            $table->foreignId('kategori_id')
-                ->constrained('kategori')
-                ->restrictOnDelete()
-                ->cascadeOnUpdate();
-
             $table->timestamps();
         });
     }
@@ -35,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('modul');
+        Schema::dropIfExists('kategori');
     }
 };

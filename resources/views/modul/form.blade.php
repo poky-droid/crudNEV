@@ -77,6 +77,23 @@
     .ql-snow .ql-fill { fill: var(--text-muted); }
     .ql-snow .ql-picker { color: var(--text-muted); }
 
+    /* --- Thumbnail upload styling --- */
+    .thumbnail-preview-box {
+        margin-top: 10px;
+        border: 1px dashed var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        display: none;
+    }
+    .thumbnail-preview-box.active { display: block; }
+    .thumbnail-preview-box img {
+        max-width: 100%;
+        max-height: 160px;
+        border-radius: 6px;
+        display: block;
+        margin: 0 auto;
+    }
+
     /* --- Preview styling --- */
     .preview-card {
         border: 1px solid var(--border);
@@ -96,6 +113,14 @@
         padding: 3px 8px;
         border-radius: 5px;
         margin-bottom: 10px;
+    }
+    .preview-thumbnail {
+        width: 100%;
+        max-height: 220px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        display: block;
     }
     .preview-title {
         font-size: 22px;
@@ -217,6 +242,22 @@
                     <label>Deskripsi</label>
                     <textarea name="deskripsi" id="input-deskripsi" rows="3">{{ old('deskripsi', $modul->deskripsi ?? '') }}</textarea>
                 </div>
+
+                <div class="form-group">
+                    <label>Thumbnail</label>
+                    <input type="file" name="thumbnail" id="input-thumbnail" accept="image/*"
+                        data-existing-url="{{ isset($modul) && $modul->thumbnail ? Storage::disk('s3')->url($modul->thumbnail) : '' }}">
+                    @if(isset($modul) && $modul->thumbnail)
+                        <p style="font-size:11px;color:var(--text-muted);margin-top:6px">Saat ini: {{ $modul->thumbnail }}</p>
+                    @endif
+                    <div class="thumbnail-preview-box {{ isset($modul) && $modul->thumbnail ? 'active' : '' }}" id="thumbnail-preview-box">
+                        <img id="thumbnail-preview-img" src="{{ isset($modul) && $modul->thumbnail ? Storage::disk('s3')->url($modul->thumbnail) : '' }}" alt="Preview thumbnail">
+                    </div>
+                    @error('thumbnail')
+                        <span style="color: var(--danger); font-size: 12px; margin-top: 4px; display: block;">{{ $message }}</span>
+                    @enderror
+                </div>
+
                 <div class="form-group">
                     <label>Pembuat <span style="color:red">*</span></label>
                     <div class="anggota-check-list" id="input-creators" style="margin-top:10px">
@@ -430,10 +471,40 @@ function readFileAsDataUrl(file, cb) {
     reader.readAsDataURL(file);
 }
 
+// preview kecil di bawah input file thumbnail (langsung tampil pas user pilih file)
+document.getElementById('input-thumbnail').addEventListener('change', function () {
+    const file = this.files[0];
+    const box = document.getElementById('thumbnail-preview-box');
+    const img = document.getElementById('thumbnail-preview-img');
+
+    if (file) {
+        readFileAsDataUrl(file, dataUrl => {
+            img.src = dataUrl;
+            box.classList.add('active');
+        });
+    } else if (this.dataset.existingUrl) {
+        img.src = this.dataset.existingUrl;
+        box.classList.add('active');
+    } else {
+        img.src = '';
+        box.classList.remove('active');
+    }
+});
+
+async function getThumbnailPreview() {
+    const input = document.getElementById('input-thumbnail');
+    const file = input.files[0];
+    if (file) {
+        return new Promise(resolve => readFileAsDataUrl(file, resolve));
+    }
+    return input.dataset.existingUrl || null;
+}
+
 async function updatePreview() {
     const namaModul = document.getElementById('input-nama-modul').value.trim();
     const slug = document.getElementById('input-slug').value.trim();
     const deskripsi = document.getElementById('input-deskripsi').value.trim();
+    const thumbnailUrl = await getThumbnailPreview();
 
     const creatorNames = Array.from(
         document.querySelectorAll('#input-creators input[type="checkbox"]:checked')
@@ -478,12 +549,17 @@ async function updatePreview() {
 
     const container = document.getElementById('preview-content');
 
-    if (!namaModul && !slug && !deskripsi && creatorNames.length === 0 && kategoriNames.length === 0 && blockData.length === 0) {
+    if (!namaModul && !slug && !deskripsi && !thumbnailUrl && creatorNames.length === 0 && kategoriNames.length === 0 && blockData.length === 0) {
         container.innerHTML = `<div class="preview-empty"><i class="fa-solid fa-file-lines" style="font-size:24px;display:block;margin-bottom:8px"></i>Isi form di kiri untuk lihat preview</div>`;
         return;
     }
 
     let html = '';
+
+    if (thumbnailUrl) {
+        html += `<img class="preview-thumbnail" src="${thumbnailUrl}" alt="thumbnail">`;
+    }
+
     html += `<h1 class="preview-title">${namaModul ? escapeHtml(namaModul) : '<span style="color:var(--text-muted)">Nama modul belum diisi</span>'}</h1>`;
 
     if (slug) {

@@ -34,13 +34,17 @@ class ModulController extends Controller
         $request->validate([
             'nama_modul'   => 'required|string|max:255',
             'slug'         => 'nullable|string|max:255|unique:modul,slug',
+            'thumbnail'    => 'nullable|image|max:2048',
             'creators'     => 'required|array|min:1',
             'creators.*'   => 'required|exists:anggota,id',
             'kategoris'    => 'required|array|min:1',
             'kategoris.*'  => 'required|exists:kategori,id',
         ]);
 
-        $modul = Modul::create($request->only(['nama_modul', 'slug', 'deskripsi']));
+        $data = $request->only(['nama_modul', 'slug', 'deskripsi']);
+        $data['thumbnail'] = $this->uploadThumbnail($request);
+
+        $modul = Modul::create($data);
         $modul->creators()->sync($request->creators);
         $modul->kategoris()->sync($request->kategoris);
         $this->syncKonten($modul, $request);
@@ -63,6 +67,7 @@ class ModulController extends Controller
         $request->validate([
             'nama_modul'   => 'required|string|max:255',
             'slug'         => 'nullable|string|max:255|unique:modul,slug,' . $modul->id,
+            'thumbnail'    => 'nullable|image|max:2048',
             'creators'     => 'required|array|min:1',
             'creators.*'   => 'required|exists:anggota,id',
             'kategoris'    => 'required|array|min:1',
@@ -74,6 +79,14 @@ class ModulController extends Controller
             ? $request->slug
             : Str::slug($request->nama_modul);
 
+        if ($request->hasFile('thumbnail')) {
+            // Hapus thumbnail lama dari MinIO sebelum ganti yang baru
+            if ($modul->thumbnail) {
+                Storage::disk('s3')->delete($modul->thumbnail);
+            }
+            $updateData['thumbnail'] = $this->uploadThumbnail($request);
+        }
+
         $modul->update($updateData);
         $modul->creators()->sync($request->creators);
         $modul->kategoris()->sync($request->kategoris);
@@ -84,6 +97,7 @@ class ModulController extends Controller
 
     public function destroy(Modul $modul)
     {
+        // Thumbnail modul dihapus otomatis lewat static::deleting() di Model
         foreach ($modul->konten as $k) {
             if ($k->isi_file) {
                 Storage::disk('s3')->delete($k->isi_file); // hapus dari MinIO
@@ -97,6 +111,21 @@ class ModulController extends Controller
     // ─────────────────────────────────────────────────────────────
     // PRIVATE HELPERS
     // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Upload thumbnail modul ke MinIO, return path-nya (atau null jika tidak ada file).
+     */
+    private function uploadThumbnail(Request $request): ?string
+    {
+        if (!$request->hasFile('thumbnail') || !$request->file('thumbnail')->isValid()) {
+            return null;
+        }
+
+        $file     = $request->file('thumbnail');
+        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+
+        return $file->storeAs('modul/thumbnails', $filename, 's3');
+    }
 
     private function syncKonten(Modul $modul, Request $request): void
     {

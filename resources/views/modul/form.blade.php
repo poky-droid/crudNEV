@@ -351,6 +351,38 @@
 let blockIdx = {{ isset($modul) ? $modul->konten->count() : 0 }};
 const quillEditors = {};
 
+// Handler custom buat tombol "link" di toolbar Quill.
+// Kenapa perlu di-override: tooltip link bawaan Quill nampilin <input> beneran
+// di dalam DOM. Karena editor ini nested di dalam <form id="modul-form">, saat
+// user ngetik URL lalu pencet Enter, Enter itu bisa ke-capture sebagai submit
+// form (bukan konfirmasi link ke Quill) — akibatnya form ke-submit duluan
+// sebelum link sempat ter-apply ke isi_text, jadi link "gak kesimpen".
+// Solusi: pakai prompt() native, yang berjalan di luar DOM form sama sekali.
+function customLinkHandler(value) {
+    const quill = this.quill;
+    const range = quill.getSelection();
+
+    if (!value) {
+        quill.format('link', false);
+        return;
+    }
+
+    if (!range || range.length === 0) {
+        alert('Pilih (blok/select) teks yang mau dijadikan link dulu, baru klik tombol link.');
+        return;
+    }
+
+    let url = prompt('Masukkan URL link:');
+    if (!url) return;
+
+    url = url.trim();
+    if (!/^(https?:\/\/|mailto:|tel:)/i.test(url)) {
+        url = 'https://' + url;
+    }
+
+    quill.format('link', url);
+}
+
 function initQuill(id) {
     // Check if editor element exists
     const editorElement = document.getElementById(`editor-${id}`);
@@ -360,14 +392,19 @@ function initQuill(id) {
         theme: 'snow',
         placeholder: 'Tulis konten...',
         modules: {
-            toolbar: [
-                [{ header: [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline'],
-                ['blockquote', 'code-block'],
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                ['link', 'image'],
-                ['clean']
-            ]
+            toolbar: {
+                container: [
+                    [{ header: [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline'],
+                    ['blockquote', 'code-block'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    ['link', 'image'],
+                    ['clean']
+                ],
+                handlers: {
+                    link: customLinkHandler
+                }
+            }
         }
     });
 
@@ -454,6 +491,18 @@ document.addEventListener('DOMContentLoaded', function() {
         initQuill(id);
     });
     updatePreview();
+});
+
+// Guard tambahan: cegah Enter di input teks biasa (nama modul, slug, dll)
+// nyubmit form ke-gak sengaja. Enter di dalam area Quill (.ql-editor / .ql-tooltip)
+// tetap dibiarkan jalan normal karena itu ditangani sendiri sama Quill.
+document.getElementById('modul-form').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    const target = e.target;
+    if (target.tagName === 'TEXTAREA') return;
+    if (target.closest('.ql-editor') || target.closest('.ql-tooltip')) return;
+    if (target.tagName === 'BUTTON' && target.type === 'submit') return;
+    e.preventDefault();
 });
 
 // ---------- LIVE PREVIEW LOGIC ----------

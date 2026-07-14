@@ -21,17 +21,16 @@ class KategoriController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'nama_kategori' => 'required|string|max:255|unique:kategori,nama_kategori',
-            'deskripsi'     => 'nullable|string',
+        $request->validate([
+            'nama_kategori' => 'required|string|max:255|unique:kategori',
         ]);
 
-        $validated['slug'] = Str::slug($validated['nama_kategori']);
+        Kategori::create([
+            'nama_kategori' => $request->nama_kategori,
+            'slug' => Str::slug($request->nama_kategori),
+        ]);
 
-        Kategori::create($validated);
-
-        return redirect()->route('kategori.index')
-            ->with('success', 'Kategori berhasil ditambahkan.');
+        return redirect()->route('kategori.index')->with('success', 'Kategori berhasil ditambahkan');
     }
 
     public function edit(Kategori $kategori)
